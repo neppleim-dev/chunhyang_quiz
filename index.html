@@ -60,7 +60,7 @@
       <div class="inline-block p-3 rounded-2xl bg-emerald-100 text-emerald-700 mb-4 animate-bounce">
         <i class="fa-solid fa-book-open text-3xl"></i>
       </div>
-      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2">교과서 핵심 내용 완성하기</h2>
+      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2">교과서 핵심 내용 이해하기</h2>
       <p class="text-slate-600 text-sm md:text-base mb-6 max-w-md mx-auto">
         인물의 상징성, 한시의 의도, 반어·풍자 기법을 점검해보세요.<br>
         <span class="text-teal-600 font-semibold">정확하고 빠른 정답</span>일수록 상위 순위에 등극합니다!
@@ -308,8 +308,12 @@
     중학 국어 2-2 &lt;춘향전&gt; 단원 형성평가 웹앱 &copy; 2026
   </footer>
 
-  <!-- Quiz Script Logic -->
-  <script>
+  <!-- Quiz & Real-time Cloud Leaderboard Script Logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
     // 1. Quiz Question Dataset (<춘향전> Middle School 2-2 Standard)
     const quizQuestions = [
       {
@@ -392,31 +396,27 @@
       }
     ];
 
-    const STORAGE_KEY = "chunhyang_quiz_participants_v3";
-    let memoryLeaderboard = [];
+    // Firebase Cloud Setup for Multi-user Real-time Leaderboard
+    const appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
+    const firebaseConfig = typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : null;
+    const LEADERBOARD_COLLECTION = "chunhyang_leaderboard";
 
-    // App State Variables
-    let currentUser = { studentId: "", name: "", sessionId: null };
+    let app = null;
+    let db = null;
+    let auth = null;
+    let authUser = null;
+    let unsubscribeSnapshot = null;
+
+    // Shared in-memory state synced with Cloud
+    let cloudLeaderboard = [];
+
+    // Current Quiz Session Variables
+    let currentUser = { studentId: "", name: "", docId: "", sessionId: null };
     let currentQuestionIndex = 0;
     let userAnswers = new Array(quizQuestions.length).fill(null);
     let timerInterval = null;
     let startTime = 0;
     let elapsedTimeSeconds = 0;
-
-    // Cross-tab synchronization channel (if multiple tabs are used)
-    let syncChannel = null;
-    try {
-      if (typeof BroadcastChannel !== "undefined") {
-        syncChannel = new BroadcastChannel("chunhyang_quiz_sync_channel");
-        syncChannel.onmessage = () => {
-          updateHeaderParticipantBadge();
-          const modal = document.getElementById("modal-leaderboard");
-          if (modal && !modal.classList.contains("hidden")) {
-            renderLeaderboardRows();
-          }
-        };
-      }
-    } catch (e) {}
 
     // Format seconds to MM:SS
     function formatSeconds(sec) {
@@ -426,7 +426,12 @@
       return `${mins}:${secs}`;
     }
 
-    // Sort Leaderboard: 1st Score DESC, 2nd Time ASC, 3rd Timestamp ASC
+    // Create safe document ID per student (studentId + name)
+    function makeSafeDocId(studentId, name) {
+      return `${studentId.trim()}_${name.trim()}`.replace(/[\/\.#$\[\]]/g, "_");
+    }
+
+    // Sort Leaderboard in JS memory: 1st Score DESC, 2nd Time ASC, 3rd Timestamp ASC
     function sortLeaderboardData(list) {
       return [...list].sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
@@ -435,33 +440,96 @@
       });
     }
 
-    // Load all game participants from storage
     function getLeaderboard() {
-      try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          if (Array.isArray(parsed)) {
-            memoryLeaderboard = sortLeaderboardData(parsed);
-            return memoryLeaderboard;
-          }
-        }
-      } catch (e) {}
-      return sortLeaderboardData(memoryLeaderboard);
+      return sortLeaderboardData(cloudLeaderboard);
     }
 
-    // Save all game participants to storage
-    function saveLeaderboard(data) {
-      const sorted = sortLeaderboardData(data);
-      memoryLeaderboard = sorted;
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted));
-      } catch (e) {}
-      updateHeaderParticipantBadge();
-      if (syncChannel) {
-        try { syncChannel.postMessage({ type: "UPDATED" }); } catch (e) {}
+    function updateHeaderParticipantBadge() {
+      const list = getLeaderboard();
+      const badge = document.getElementById("header-participant-count");
+      if (badge) {
+        badge.innerText = `${list.length}명`;
       }
     }
+
+    function updateResultRankLive() {
+      const resultView = document.getElementById("view-result");
+      if (!resultView || resultView.classList.contains("hidden")) return;
+      if (!currentUser.studentId || !currentUser.name) return;
+
+      const sortedLeaderboard = getLeaderboard();
+      const userRank = sortedLeaderboard.findIndex(
+        item => item.studentId === currentUser.studentId && item.name === currentUser.name
+      ) + 1;
+
+      if (userRank > 0) {
+        const resRankEl = document.getElementById("res-rank");
+        if (resRankEl) {
+          resRankEl.innerHTML = `${userRank}<span class="text-sm font-normal">위 / ${sortedLeaderboard.length}명</span>`;
+        }
+      }
+    }
+
+    // Subscribe to real-time updates from all connected users
+    function subscribeToCloudLeaderboard() {
+      if (!authUser || !db) return;
+      if (unsubscribeSnapshot) {
+        unsubscribeSnapshot();
+      }
+
+      const colRef = collection(db, "artifacts", appId, "public", "data", LEADERBOARD_COLLECTION);
+      unsubscribeSnapshot = onSnapshot(
+        colRef,
+        (snapshot) => {
+          const entries = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data && data.studentId && data.name) {
+              entries.push(data);
+            }
+          });
+          cloudLeaderboard = sortLeaderboardData(entries);
+          updateHeaderParticipantBadge();
+          updateResultRankLive();
+
+          const modal = document.getElementById("modal-leaderboard");
+          if (modal && !modal.classList.contains("hidden")) {
+            renderLeaderboardRows(false);
+          }
+        },
+        (error) => {
+          console.error("실시간 순위표 동기화 오류:", error);
+        }
+      );
+    }
+
+    // Initialize Firebase Auth & Cloud Sync on load
+    async function initCloudConnection() {
+      if (!firebaseConfig) return;
+      try {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // RULE 3: Authenticate FIRST before any Firestore query
+        if (typeof __initial_auth_token !== "undefined" && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        onAuthStateChanged(auth, (user) => {
+          authUser = user;
+          if (user) {
+            subscribeToCloudLeaderboard();
+          }
+        });
+      } catch (err) {
+        console.error("클라우드 초기화 오류:", err);
+      }
+    }
+
+    initCloudConnection();
 
     // Calculate current score from userAnswers
     function calculateCurrentScore() {
@@ -474,8 +542,8 @@
       return correctCount * 10;
     }
 
-    // Register or update the current participant in the leaderboard
-    function upsertCurrentParticipant() {
+    // Save or update current participant's score & time to the shared cloud leaderboard
+    async function upsertCurrentParticipant() {
       if (!currentUser.studentId || !currentUser.name) return;
 
       const nowElapsed = startTime > 0 ? Math.max(1, Math.floor((Date.now() - startTime) / 1000)) : 0;
@@ -483,73 +551,39 @@
       const currentScore = calculateCurrentScore();
       const formattedTime = formatSeconds(nowElapsed);
 
-      const leaderboard = getLeaderboard();
       const record = {
+        docId: currentUser.docId,
         sessionId: currentUser.sessionId,
         studentId: currentUser.studentId,
         name: currentUser.name,
         score: currentScore,
         timeSeconds: nowElapsed,
         formattedTime: formattedTime,
-        timestamp: currentUser.sessionId || Date.now()
+        timestamp: currentUser.sessionId || Date.now(),
+        uid: authUser ? authUser.uid : "anonymous"
       };
 
-      // Find by same sessionId or same studentId + name
-      const existingIdx = leaderboard.findIndex(
-        item =>
-          (currentUser.sessionId && item.sessionId === currentUser.sessionId) ||
-          (item.studentId === currentUser.studentId && item.name === currentUser.name)
+      // Optimistic in-memory update for instant UI responsiveness
+      const existingIdx = cloudLeaderboard.findIndex(
+        item => item.studentId === currentUser.studentId && item.name === currentUser.name
       );
-
       if (existingIdx !== -1) {
-        leaderboard[existingIdx] = record;
+        cloudLeaderboard[existingIdx] = record;
       } else {
-        leaderboard.push(record);
+        cloudLeaderboard.push(record);
       }
-
-      saveLeaderboard(leaderboard);
-    }
-
-    function updateHeaderParticipantBadge() {
-      const list = getLeaderboard();
-      const badge = document.getElementById("header-participant-count");
-      if (badge) {
-        badge.innerText = `${list.length}명`;
-      }
-    }
-
-    // Migrate real user records from earlier keys (excluding dummy sample IDs) on load
-    window.addEventListener("DOMContentLoaded", () => {
-      const sampleIds = new Set([
-        "20103_김서연", "20112_이도현", "20107_박지민", "20119_최유진", "20101_강민준",
-        "20124_정하은", "20115_윤시우", "20109_송예린", "20121_임현우", "20105_한소희"
-      ]);
-
-      try {
-        if (!localStorage.getItem(STORAGE_KEY)) {
-          const migrated = [];
-          const prevKeys = ["chunhyang_quiz_leaderboard", "chunhyang_quiz_leaderboard_v2"];
-          prevKeys.forEach(k => {
-            const raw = localStorage.getItem(k);
-            if (raw) {
-              const arr = JSON.parse(raw);
-              if (Array.isArray(arr)) {
-                arr.forEach(item => {
-                  if (item && item.studentId && item.name && !sampleIds.has(`${item.studentId}_${item.name}`)) {
-                    migrated.push(item);
-                  }
-                });
-              }
-            }
-          });
-          if (migrated.length > 0) {
-            saveLeaderboard(migrated);
-          }
-        }
-      } catch (e) {}
-
+      cloudLeaderboard = sortLeaderboardData(cloudLeaderboard);
       updateHeaderParticipantBadge();
-    });
+
+      // Persist to shared public cloud collection so all other users see it
+      if (!authUser || !db) return;
+      try {
+        const docRef = doc(db, "artifacts", appId, "public", "data", LEADERBOARD_COLLECTION, currentUser.docId);
+        await setDoc(docRef, record, { merge: true });
+      } catch (err) {
+        console.error("점수 저장 오류:", err);
+      }
+    }
 
     // 2. Quiz Logic Functions
     function startQuiz() {
@@ -565,6 +599,7 @@
 
       currentUser.studentId = studentIdInput;
       currentUser.name = userNameInput;
+      currentUser.docId = makeSafeDocId(studentIdInput, userNameInput);
       currentUser.sessionId = Date.now();
 
       // Reset state
@@ -585,7 +620,7 @@
       document.getElementById("quiz-timer").innerText = "00:00";
       timerInterval = setInterval(updateTimer, 1000);
 
-      // Immediately register participant upon entering studentId & name and starting game
+      // Register participant immediately to cloud
       upsertCurrentParticipant();
 
       renderQuestion();
@@ -676,7 +711,7 @@
       }
     }
 
-    function submitQuiz(forceSubmit = false) {
+    async function submitQuiz(forceSubmit = false) {
       // Check for unanswered questions
       const unansweredIndex = userAnswers.findIndex(a => a === null);
       if (unansweredIndex !== -1 && !forceSubmit) {
@@ -684,15 +719,15 @@
         return;
       }
 
-      // Stop Timer & finalize participant record
+      // Stop Timer & finalize participant record in cloud
       clearInterval(timerInterval);
-      upsertCurrentParticipant();
+      await upsertCurrentParticipant();
 
       const finalScore = calculateCurrentScore();
       const formattedTime = formatSeconds(elapsedTimeSeconds);
       const sortedLeaderboard = getLeaderboard();
 
-      // Find Exact User Rank
+      // Find Exact User Rank among all cloud participants
       const userRank = sortedLeaderboard.findIndex(
         item => item.studentId === currentUser.studentId && item.name === currentUser.name
       ) + 1;
@@ -826,13 +861,13 @@
     }
 
     // 3. Leaderboard Modal & Render Functions
-    function renderLeaderboardRows() {
+    function renderLeaderboardRows(syncActiveQuiz = true) {
       const tbody = document.getElementById("leaderboard-tbody");
       const totalLabel = document.getElementById("total-students-label");
 
-      // If a participant is currently in the middle of the quiz, sync their latest score & time
+      // If a participant is currently solving the quiz, sync their latest score & time
       const quizView = document.getElementById("view-quiz");
-      if (quizView && !quizView.classList.contains("hidden")) {
+      if (syncActiveQuiz && quizView && !quizView.classList.contains("hidden")) {
         upsertCurrentParticipant();
       }
 
@@ -846,7 +881,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="4" class="py-8 text-center text-slate-400 text-xs">
-              학번과 이름을 입력하고 퀴즈에 참여하면 순위가 자동으로 표시됩니다.
+              학번과 이름을 입력하고 퀴즈에 참여하면 모든 학생의 순위가 실시간으로 표시됩니다.
             </td>
           </tr>`;
         return;
@@ -888,7 +923,7 @@
       const modal = document.getElementById("modal-leaderboard");
       const modalContent = document.getElementById("modal-content");
 
-      renderLeaderboardRows();
+      renderLeaderboardRows(true);
 
       modal.classList.remove("hidden");
       setTimeout(() => {
@@ -907,6 +942,15 @@
         modal.classList.add("hidden");
       }, 300);
     }
+
+    // Bind handlers to window for HTML inline onclick attributes
+    window.startQuiz = startQuiz;
+    window.selectOption = selectOption;
+    window.navigateQuestion = navigateQuestion;
+    window.submitQuiz = submitQuiz;
+    window.restartQuiz = restartQuiz;
+    window.openLeaderboardModal = openLeaderboardModal;
+    window.closeLeaderboardModal = closeLeaderboardModal;
   </script>
 </body>
 </html>
