@@ -42,7 +42,7 @@
     <div class="max-w-4xl mx-auto flex justify-between items-center">
       <div class="flex items-center gap-2">
         <span class="text-2xl">🌸</span>
-        <h1 class="font-bold text-lg md:text-xl text-teal-800 tracking-tight">국어 <span class="text-emerald-600">&lt;춘향전&gt;</span> 퀴즈</h1>
+        <h1 class="font-bold text-lg md:text-xl text-teal-800 tracking-tight">중학 국어 2-2 <span class="text-emerald-600">&lt;춘향전&gt;</span> 퀴즈</h1>
       </div>
       <button id="btn-show-leaderboard" onclick="openLeaderboardModal()" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-semibold transition border border-teal-200 shadow-sm">
         <i class="fa-solid font-bold fa-trophy text-amber-500"></i>
@@ -245,69 +245,23 @@
       </div>
 
       <div class="p-6">
-        <!-- Top Controls & Filter -->
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <!-- Top Info -->
+        <div class="flex items-center justify-between mb-3">
           <p class="text-xs text-slate-500 flex items-center gap-1">
             <i class="fa-solid fa-circle-info text-teal-600"></i>
             순위 기준: <strong>① 높은 점수</strong> &gt; <strong>② 짧은 시간</strong>
           </p>
-          <div class="flex items-center gap-2">
-            <button onclick="toggleAddRecordForm()" class="text-[11px] px-2.5 py-1 rounded-lg bg-teal-50 hover:bg-teal-100 text-teal-700 font-semibold border border-teal-200 transition flex items-center gap-1">
-              <i class="fa-solid fa-user-plus"></i> 학생 기록 수동 추가
-            </button>
-            <button onclick="restoreSampleLeaderboard()" class="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold transition flex items-center gap-1" title="학급 기본 참여 명단 불러오기">
-              <i class="fa-solid fa-users"></i> 기본 명단 복원
-            </button>
-            <button onclick="resetLeaderboardData()" class="text-[11px] text-slate-400 hover:text-rose-500 underline flex items-center gap-1 transition ml-1">
-              <i class="fa-solid fa-trash-can"></i> 전체 비우기
-            </button>
-          </div>
-        </div>
-
-        <!-- Quick Manual Add Student Form (Hidden by default, handy for teacher) -->
-        <div id="form-add-student" class="hidden mb-4 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs">
-          <div class="font-bold text-slate-700 mb-2 flex items-center justify-between">
-            <span><i class="fa-solid fa-pen-to-square text-teal-600 mr-1"></i> 다른 기기에서 푼 학생 기록 직접 추가</span>
-            <button onclick="toggleAddRecordForm()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
-            <input type="text" id="manual-id" placeholder="학번 (예: 20115)" class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white outline-none focus:border-teal-500">
-            <input type="text" id="manual-name" placeholder="이름 (예: 김철수)" class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white outline-none focus:border-teal-500">
-            <select id="manual-score" class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white outline-none focus:border-teal-500">
-              <option value="60">60점 (6개 정답)</option>
-              <option value="50">50점 (5개 정답)</option>
-              <option value="40">40점 (4개 정답)</option>
-              <option value="30">30점 (3개 정답)</option>
-              <option value="20">20점 (2개 정답)</option>
-              <option value="10">10점 (1개 정답)</option>
-              <option value="0">0점</option>
-            </select>
-            <input type="number" id="manual-time" placeholder="초 (예: 42)" min="1" max="3600" class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white outline-none focus:border-teal-500">
-          </div>
-          <button onclick="addManualStudentRecord()" class="w-full py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold transition">
-            순위표에 즉시 등록하기
-          </button>
-        </div>
-
-        <!-- Search Input -->
-        <div class="relative mb-3">
-          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 text-xs">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </span>
-          <input type="text" id="leaderboard-search" oninput="renderLeaderboardRows()" placeholder="이름 또는 학번으로 내 순위 빠르게 찾기..." 
-            class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:border-teal-500 outline-none bg-slate-50/60">
         </div>
 
         <!-- Leaderboard Table Container -->
-        <div class="max-h-[340px] overflow-y-auto custom-scrollbar border border-slate-100 rounded-2xl">
+        <div class="max-h-[380px] overflow-y-auto custom-scrollbar border border-slate-100 rounded-2xl">
           <table class="w-full text-left border-collapse">
             <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase z-10">
               <tr>
-                <th class="py-3 px-3 text-center w-16">순위</th>
-                <th class="py-3 px-3">학번 / 이름</th>
-                <th class="py-3 px-3 text-center">점수</th>
-                <th class="py-3 px-3 text-center">소요시간</th>
-                <th class="py-3 px-2 text-center w-10">관리</th>
+                <th class="py-3 px-4 text-center w-20">순위</th>
+                <th class="py-3 px-4">학번 / 이름</th>
+                <th class="py-3 px-4 text-center">점수</th>
+                <th class="py-3 px-4 text-center">소요시간</th>
               </tr>
             </thead>
             <tbody id="leaderboard-tbody" class="divide-y divide-slate-100 text-sm">
@@ -438,68 +392,122 @@
       }
     ];
 
-    // Default Participating Students Dataset (Ensures leaderboard shows participating students out of the box)
-    const initialClassStudents = [
-      { studentId: "20103", name: "김서연", score: 60, timeSeconds: 28, formattedTime: "00:28", timestamp: Date.now() - 3600000 },
-      { studentId: "20112", name: "이도현", score: 60, timeSeconds: 34, formattedTime: "00:34", timestamp: Date.now() - 3400000 },
-      { studentId: "20107", name: "박지민", score: 60, timeSeconds: 41, formattedTime: "00:41", timestamp: Date.now() - 3100000 },
-      { studentId: "20119", name: "최유진", score: 50, timeSeconds: 31, formattedTime: "00:31", timestamp: Date.now() - 2900000 },
-      { studentId: "20101", name: "강민준", score: 50, timeSeconds: 39, formattedTime: "00:39", timestamp: Date.now() - 2500000 },
-      { studentId: "20124", name: "정하은", score: 50, timeSeconds: 46, formattedTime: "00:46", timestamp: Date.now() - 2200000 },
-      { studentId: "20115", name: "윤시우", score: 50, timeSeconds: 52, formattedTime: "00:52", timestamp: Date.now() - 1900000 },
-      { studentId: "20109", name: "송예린", score: 40, timeSeconds: 37, formattedTime: "00:37", timestamp: Date.now() - 1600000 },
-      { studentId: "20121", name: "임현우", score: 40, timeSeconds: 49, formattedTime: "00:49", timestamp: Date.now() - 1200000 },
-      { studentId: "20105", name: "한소희", score: 30, timeSeconds: 44, formattedTime: "00:44", timestamp: Date.now() - 900000 }
-    ];
-
-    const STORAGE_KEY = "chunhyang_quiz_leaderboard_v2";
+    const STORAGE_KEY = "chunhyang_quiz_participants_v3";
+    let memoryLeaderboard = [];
 
     // App State Variables
-    let currentUser = { studentId: "", name: "" };
+    let currentUser = { studentId: "", name: "", sessionId: null };
     let currentQuestionIndex = 0;
     let userAnswers = new Array(quizQuestions.length).fill(null);
     let timerInterval = null;
     let startTime = 0;
     let elapsedTimeSeconds = 0;
 
+    // Cross-tab synchronization channel (if multiple tabs are used)
+    let syncChannel = null;
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        syncChannel = new BroadcastChannel("chunhyang_quiz_sync_channel");
+        syncChannel.onmessage = () => {
+          updateHeaderParticipantBadge();
+          const modal = document.getElementById("modal-leaderboard");
+          if (modal && !modal.classList.contains("hidden")) {
+            renderLeaderboardRows();
+          }
+        };
+      }
+    } catch (e) {}
+
     // Format seconds to MM:SS
     function formatSeconds(sec) {
-      const mins = String(Math.floor(sec / 60)).padStart(2, '0');
-      const secs = String(sec % 60).padStart(2, '0');
+      const safeSec = Math.max(0, parseInt(sec, 10) || 0);
+      const mins = String(Math.floor(safeSec / 60)).padStart(2, "0");
+      const secs = String(safeSec % 60).padStart(2, "0");
       return `${mins}:${secs}`;
     }
 
-    // Sort Leaderboard: 1st Score DESC, 2nd Time ASC
+    // Sort Leaderboard: 1st Score DESC, 2nd Time ASC, 3rd Timestamp ASC
     function sortLeaderboardData(list) {
-      return list.sort((a, b) => {
+      return [...list].sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
-        return a.timeSeconds - b.timeSeconds;
+        if (a.timeSeconds !== b.timeSeconds) return a.timeSeconds - b.timeSeconds;
+        return (a.timestamp || 0) - (b.timestamp || 0);
       });
     }
 
-    // Load leaderboard from localStorage (Seeds with initial class records if first time)
+    // Load all game participants from storage
     function getLeaderboard() {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored !== null) {
-        try {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            return sortLeaderboardData(parsed);
+            memoryLeaderboard = sortLeaderboardData(parsed);
+            return memoryLeaderboard;
           }
-        } catch (e) {
-          console.error(e);
         }
-      }
-      // First load: initialize with default class records so it's never empty
-      const seeded = sortLeaderboardData([...initialClassStudents]);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
-      return seeded;
+      } catch (e) {}
+      return sortLeaderboardData(memoryLeaderboard);
     }
 
+    // Save all game participants to storage
     function saveLeaderboard(data) {
       const sorted = sortLeaderboardData(data);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted));
+      memoryLeaderboard = sorted;
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sorted));
+      } catch (e) {}
       updateHeaderParticipantBadge();
+      if (syncChannel) {
+        try { syncChannel.postMessage({ type: "UPDATED" }); } catch (e) {}
+      }
+    }
+
+    // Calculate current score from userAnswers
+    function calculateCurrentScore() {
+      let correctCount = 0;
+      quizQuestions.forEach((q, idx) => {
+        if (userAnswers[idx] === q.correctIndex) {
+          correctCount++;
+        }
+      });
+      return correctCount * 10;
+    }
+
+    // Register or update the current participant in the leaderboard
+    function upsertCurrentParticipant() {
+      if (!currentUser.studentId || !currentUser.name) return;
+
+      const nowElapsed = startTime > 0 ? Math.max(1, Math.floor((Date.now() - startTime) / 1000)) : 0;
+      elapsedTimeSeconds = nowElapsed;
+      const currentScore = calculateCurrentScore();
+      const formattedTime = formatSeconds(nowElapsed);
+
+      const leaderboard = getLeaderboard();
+      const record = {
+        sessionId: currentUser.sessionId,
+        studentId: currentUser.studentId,
+        name: currentUser.name,
+        score: currentScore,
+        timeSeconds: nowElapsed,
+        formattedTime: formattedTime,
+        timestamp: currentUser.sessionId || Date.now()
+      };
+
+      // Find by same sessionId or same studentId + name
+      const existingIdx = leaderboard.findIndex(
+        item =>
+          (currentUser.sessionId && item.sessionId === currentUser.sessionId) ||
+          (item.studentId === currentUser.studentId && item.name === currentUser.name)
+      );
+
+      if (existingIdx !== -1) {
+        leaderboard[existingIdx] = record;
+      } else {
+        leaderboard.push(record);
+      }
+
+      saveLeaderboard(leaderboard);
     }
 
     function updateHeaderParticipantBadge() {
@@ -510,90 +518,36 @@
       }
     }
 
-    function restoreSampleLeaderboard() {
-      const current = getLeaderboard();
-      // Merge existing custom records with initialClassStudents without duplicating studentId
-      const map = new Map();
-      initialClassStudents.forEach(item => map.set(item.studentId, item));
-      current.forEach(item => map.set(item.studentId, item));
-      const merged = Array.from(map.values());
-      saveLeaderboard(merged);
-      renderLeaderboardRows();
-    }
-
-    function resetLeaderboardData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-      updateHeaderParticipantBadge();
-      renderLeaderboardRows();
-    }
-
-    function deleteStudentRecord(studentId, timestamp) {
-      let leaderboard = getLeaderboard();
-      leaderboard = leaderboard.filter(item => !(item.studentId === studentId && item.timestamp === timestamp));
-      saveLeaderboard(leaderboard);
-      renderLeaderboardRows();
-    }
-
-    function toggleAddRecordForm() {
-      const form = document.getElementById("form-add-student");
-      form.classList.toggle("hidden");
-    }
-
-    function addManualStudentRecord() {
-      const idInput = document.getElementById("manual-id");
-      const nameInput = document.getElementById("manual-name");
-      const scoreSelect = document.getElementById("manual-score");
-      const timeInput = document.getElementById("manual-time");
-
-      const studentId = idInput.value.trim();
-      const name = nameInput.value.trim();
-      const score = parseInt(scoreSelect.value, 10);
-      const timeSeconds = parseInt(timeInput.value, 10) || 40;
-
-      if (!studentId || !name) {
-        alert("학번과 이름을 모두 입력해주세요.");
-        return;
-      }
-
-      const leaderboard = getLeaderboard();
-      const newRecord = {
-        studentId,
-        name,
-        score,
-        timeSeconds,
-        formattedTime: formatSeconds(timeSeconds),
-        timestamp: Date.now()
-      };
-
-      // Update if same studentId + name exists, or push new
-      const existingIdx = leaderboard.findIndex(item => item.studentId === studentId && item.name === name);
-      if (existingIdx !== -1) {
-        leaderboard[existingIdx] = newRecord;
-      } else {
-        leaderboard.push(newRecord);
-      }
-
-      saveLeaderboard(leaderboard);
-      idInput.value = "";
-      nameInput.value = "";
-      timeInput.value = "";
-      document.getElementById("form-add-student").classList.add("hidden");
-      renderLeaderboardRows();
-    }
-
-    // Initialize badge on page load
+    // Migrate real user records from earlier keys (excluding dummy sample IDs) on load
     window.addEventListener("DOMContentLoaded", () => {
-      // Migrate old storage if user had any records in the previous key
-      const oldStored = localStorage.getItem("chunhyang_quiz_leaderboard");
-      if (oldStored && !localStorage.getItem(STORAGE_KEY)) {
-        try {
-          const oldParsed = JSON.parse(oldStored);
-          if (Array.isArray(oldParsed) && oldParsed.length > 0) {
-            const combined = [...initialClassStudents, ...oldParsed];
-            saveLeaderboard(combined);
+      const sampleIds = new Set([
+        "20103_김서연", "20112_이도현", "20107_박지민", "20119_최유진", "20101_강민준",
+        "20124_정하은", "20115_윤시우", "20109_송예린", "20121_임현우", "20105_한소희"
+      ]);
+
+      try {
+        if (!localStorage.getItem(STORAGE_KEY)) {
+          const migrated = [];
+          const prevKeys = ["chunhyang_quiz_leaderboard", "chunhyang_quiz_leaderboard_v2"];
+          prevKeys.forEach(k => {
+            const raw = localStorage.getItem(k);
+            if (raw) {
+              const arr = JSON.parse(raw);
+              if (Array.isArray(arr)) {
+                arr.forEach(item => {
+                  if (item && item.studentId && item.name && !sampleIds.has(`${item.studentId}_${item.name}`)) {
+                    migrated.push(item);
+                  }
+                });
+              }
+            }
+          });
+          if (migrated.length > 0) {
+            saveLeaderboard(migrated);
           }
-        } catch (e) {}
-      }
+        }
+      } catch (e) {}
+
       updateHeaderParticipantBadge();
     });
 
@@ -611,6 +565,7 @@
 
       currentUser.studentId = studentIdInput;
       currentUser.name = userNameInput;
+      currentUser.sessionId = Date.now();
 
       // Reset state
       currentQuestionIndex = 0;
@@ -629,6 +584,9 @@
       clearInterval(timerInterval);
       document.getElementById("quiz-timer").innerText = "00:00";
       timerInterval = setInterval(updateTimer, 1000);
+
+      // Immediately register participant upon entering studentId & name and starting game
+      upsertCurrentParticipant();
 
       renderQuestion();
     }
@@ -706,6 +664,7 @@
 
     function selectOption(index) {
       userAnswers[currentQuestionIndex] = index;
+      upsertCurrentParticipant();
       renderQuestion();
     }
 
@@ -725,53 +684,21 @@
         return;
       }
 
-      // Stop Timer
+      // Stop Timer & finalize participant record
       clearInterval(timerInterval);
-      elapsedTimeSeconds = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+      upsertCurrentParticipant();
 
-      // Calculate Score (1문제당 10점)
-      let correctCount = 0;
-      quizQuestions.forEach((q, idx) => {
-        if (userAnswers[idx] === q.correctIndex) {
-          correctCount++;
-        }
-      });
-
-      const finalScore = correctCount * 10;
+      const finalScore = calculateCurrentScore();
       const formattedTime = formatSeconds(elapsedTimeSeconds);
-
-      // Update Leaderboard List (Update if same student retakes, or append)
-      const leaderboard = getLeaderboard();
-      const newRecord = {
-        studentId: currentUser.studentId,
-        name: currentUser.name,
-        score: finalScore,
-        timeSeconds: elapsedTimeSeconds,
-        formattedTime: formattedTime,
-        timestamp: Date.now()
-      };
-
-      const existingIdx = leaderboard.findIndex(
-        item => item.studentId === currentUser.studentId && item.name === currentUser.name
-      );
-
-      if (existingIdx !== -1) {
-        leaderboard[existingIdx] = newRecord;
-      } else {
-        leaderboard.push(newRecord);
-      }
-
-      saveLeaderboard(leaderboard);
       const sortedLeaderboard = getLeaderboard();
 
       // Find Exact User Rank
-      const userRank = sortedLeaderboard.findIndex(item => 
-        item.studentId === currentUser.studentId && 
-        item.name === currentUser.name
+      const userRank = sortedLeaderboard.findIndex(
+        item => item.studentId === currentUser.studentId && item.name === currentUser.name
       ) + 1;
 
       // Trigger Confetti effect on high score (50점 이상 = 5문제 이상 정답)
-      if (finalScore >= 50 && typeof confetti === 'function') {
+      if (finalScore >= 50 && typeof confetti === "function") {
         confetti({
           particleCount: 100,
           spread: 70,
@@ -875,7 +802,7 @@
             ${statusBadge}
           </div>
           <h4 class="font-bold text-slate-800 text-sm md:text-base mb-3">${q.question}</h4>
-          ${q.context ? `<div class="p-3 bg-white/80 rounded-xl border border-slate-200/60 text-xs text-slate-700 italic mb-3">${q.context}</div>` : ''}
+          ${q.context ? `<div class="p-3 bg-white/80 rounded-xl border border-slate-200/60 text-xs text-slate-700 italic mb-3">${q.context}</div>` : ""}
           <div class="space-y-1.5 mb-3">
             ${optionsListHtml}
           </div>
@@ -901,36 +828,32 @@
     // 3. Leaderboard Modal & Render Functions
     function renderLeaderboardRows() {
       const tbody = document.getElementById("leaderboard-tbody");
-      const searchQuery = (document.getElementById("leaderboard-search")?.value || "").trim().toLowerCase();
       const totalLabel = document.getElementById("total-students-label");
+
+      // If a participant is currently in the middle of the quiz, sync their latest score & time
+      const quizView = document.getElementById("view-quiz");
+      if (quizView && !quizView.classList.contains("hidden")) {
+        upsertCurrentParticipant();
+      }
 
       const leaderboard = getLeaderboard();
       tbody.innerHTML = "";
-      totalLabel.innerText = `총 참여 학생: ${leaderboard.length}명`;
+      if (totalLabel) {
+        totalLabel.innerText = `총 참여 학생: ${leaderboard.length}명`;
+      }
 
       if (leaderboard.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" class="py-8 text-center text-slate-400 text-xs">
-              등록된 학생 기록이 없습니다.<br>
-              <button onclick="restoreSampleLeaderboard()" class="mt-2 px-3 py-1.5 rounded-lg bg-teal-50 text-teal-700 font-bold hover:bg-teal-100 transition">
-                + 학급 기본 참여 명단 불러오기
-              </button>
+            <td colspan="4" class="py-8 text-center text-slate-400 text-xs">
+              학번과 이름을 입력하고 퀴즈에 참여하면 순위가 자동으로 표시됩니다.
             </td>
           </tr>`;
         return;
       }
 
-      let matchCount = 0;
-
       leaderboard.forEach((item, index) => {
         const rank = index + 1;
-        const matchesSearch = !searchQuery || 
-          item.name.toLowerCase().includes(searchQuery) || 
-          item.studentId.toLowerCase().includes(searchQuery);
-
-        if (!matchesSearch) return;
-        matchCount++;
 
         let rankIcon = `<span class="font-bold text-slate-600">${rank}위</span>`;
         if (rank === 1) rankIcon = `<span class="inline-flex items-center gap-1 font-extrabold text-amber-500"><i class="fa-solid fa-trophy text-base"></i> 1위</span>`;
@@ -938,43 +861,32 @@
         else if (rank === 3) rankIcon = `<span class="inline-flex items-center gap-1 font-extrabold text-amber-700"><i class="fa-solid fa-award text-base"></i> 3위</span>`;
 
         const isCurrentSessionUser = (
-          currentUser.studentId && 
-          item.studentId === currentUser.studentId && 
+          currentUser.studentId &&
+          item.studentId === currentUser.studentId &&
           item.name === currentUser.name
         );
 
         const row = document.createElement("tr");
         row.className = `${isCurrentSessionUser ? "bg-teal-50/90 font-bold text-teal-900 border-l-4 border-l-teal-500" : "hover:bg-slate-50 text-slate-700 transition"}`;
         row.innerHTML = `
-          <td class="py-3 px-3 text-center whitespace-nowrap">${rankIcon}</td>
-          <td class="py-3 px-3">
+          <td class="py-3 px-4 text-center whitespace-nowrap">${rankIcon}</td>
+          <td class="py-3 px-4">
             <div class="font-semibold text-xs md:text-sm flex items-center gap-1.5">
               <span>${item.name}</span>
-              ${isCurrentSessionUser ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-600 text-white font-bold">나</span>` : ''}
+              ${isCurrentSessionUser ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-600 text-white font-bold">나</span>` : ""}
             </div>
             <div class="text-[11px] text-slate-400 font-mono">${item.studentId}</div>
           </td>
-          <td class="py-3 px-3 text-center font-bold text-emerald-600">${item.score}점</td>
-          <td class="py-3 px-3 text-center text-xs font-mono text-slate-500">${item.formattedTime}</td>
-          <td class="py-3 px-2 text-center">
-            <button onclick="deleteStudentRecord('${item.studentId}', ${item.timestamp})" class="text-slate-300 hover:text-rose-500 transition p-1" title="기록 삭제">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
-          </td>
+          <td class="py-3 px-4 text-center font-bold text-emerald-600">${item.score}점</td>
+          <td class="py-3 px-4 text-center text-xs font-mono text-slate-500">${item.formattedTime}</td>
         `;
         tbody.appendChild(row);
       });
-
-      if (matchCount === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 text-xs">검색 조건에 맞는 학생이 없습니다.</td></tr>`;
-      }
     }
 
     function openLeaderboardModal() {
       const modal = document.getElementById("modal-leaderboard");
       const modalContent = document.getElementById("modal-content");
-      const searchInput = document.getElementById("leaderboard-search");
-      if (searchInput) searchInput.value = "";
 
       renderLeaderboardRows();
 
