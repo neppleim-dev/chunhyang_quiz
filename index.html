@@ -96,7 +96,7 @@
       <div class="grid grid-cols-3 gap-2 max-w-md mx-auto mb-8 text-xs text-slate-600">
         <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center">
           <i class="fa-solid fa-list-check text-emerald-500 text-base mb-1"></i>
-          <span>총 6문항</span>
+          <span>총 6문항 (각 10점)</span>
         </div>
         <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center">
           <i class="fa-solid fa-stopwatch text-cyan-500 text-base mb-1"></i>
@@ -231,7 +231,7 @@
       <div class="bg-gradient-to-r from-emerald-600 to-teal-700 px-6 py-4 text-white flex justify-between items-center">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-trophy text-amber-300 text-xl"></i>
-          <h3 class="font-extrabold text-lg">명예의 전당 (명예의 순위)</h3>
+          <h3 class="font-extrabold text-lg">전체 명예의 전당 (학급 순위)</h3>
         </div>
         <button onclick="closeLeaderboardModal()" class="text-white/80 hover:text-white text-xl font-bold p-1">
           <i class="fa-solid fa-xmark"></i>
@@ -239,20 +239,25 @@
       </div>
 
       <div class="p-6">
-        <p class="text-xs text-slate-500 mb-4 flex items-center gap-1">
-          <i class="fa-solid fa-circle-info text-teal-600"></i>
-          순위 기준: <strong>① 높은 점수</strong> 후 <strong>② 짧은 소요 시간</strong> 순으로 집계됩니다.
-        </p>
+        <div class="flex items-center justify-between mb-3">
+          <p class="text-xs text-slate-500 flex items-center gap-1">
+            <i class="fa-solid fa-circle-info text-teal-600"></i>
+            순위 기준: <strong>① 높은 점수</strong> &gt; <strong>② 짧은 시간</strong>
+          </p>
+          <button onclick="resetLeaderboardData()" class="text-[11px] text-slate-400 hover:text-rose-500 underline flex items-center gap-1 transition">
+            <i class="fa-solid fa-rotate"></i> 기록 초기화
+          </button>
+        </div>
 
         <!-- Leaderboard Table Container -->
         <div class="max-h-[360px] overflow-y-auto custom-scrollbar border border-slate-100 rounded-2xl">
           <table class="w-full text-left border-collapse">
             <thead class="bg-slate-50 sticky top-0 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase">
               <tr>
-                <th class="py-3 px-4 text-center">순위</th>
-                <th class="py-3 px-4">학번 / 이름</th>
-                <th class="py-3 px-4 text-center">점수</th>
-                <th class="py-3 px-4 text-center">소요시간</th>
+                <th class="py-3 px-3 text-center">순위</th>
+                <th class="py-3 px-3">학번 / 이름</th>
+                <th class="py-3 px-3 text-center">점수</th>
+                <th class="py-3 px-3 text-center">소요시간</th>
               </tr>
             </thead>
             <tbody id="leaderboard-tbody" class="divide-y divide-slate-100 text-sm">
@@ -266,6 +271,27 @@
             닫기
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Custom Unanswered Warning Modal -->
+  <div id="modal-unanswered" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-100 transform transition-all scale-95 duration-300" id="modal-unanswered-content">
+      <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-3">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 class="font-extrabold text-slate-800 text-lg mb-1">미완료 문제 안내</h3>
+      <p id="unanswered-msg-text" class="text-sm text-slate-600 mb-6 leading-relaxed">
+        아직 풀지 않은 문제가 있습니다.
+      </p>
+      <div class="flex gap-2">
+        <button id="btn-unanswered-go" class="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition">
+          해당 문제로 이동
+        </button>
+        <button id="btn-unanswered-submit" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition">
+          그대로 제출
+        </button>
       </div>
     </div>
   </div>
@@ -359,9 +385,6 @@
       }
     ];
 
-    // Leaderboard Data Initialization (Empty by default)
-    const defaultLeaderboard = [];
-
     // App State Variables
     let currentUser = { studentId: "", name: "" };
     let currentQuestionIndex = 0;
@@ -370,17 +393,29 @@
     let startTime = 0;
     let elapsedTimeSeconds = 0;
 
-    // Load leaderboard from localStorage or fallback
+    // Load leaderboard from localStorage (Returns empty array if no records)
     function getLeaderboard() {
       const stored = localStorage.getItem("chunhyang_quiz_leaderboard");
       if (stored) {
-        try { return JSON.parse(stored); } catch (e) { return defaultLeaderboard; }
+        try { 
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
+        } catch (e) {
+          console.error(e);
+        }
       }
-      return defaultLeaderboard;
+      return [];
     }
 
     function saveLeaderboard(data) {
       localStorage.setItem("chunhyang_quiz_leaderboard", JSON.stringify(data));
+    }
+
+    function resetLeaderboardData() {
+      localStorage.removeItem("chunhyang_quiz_leaderboard");
+      openLeaderboardModal();
     }
 
     // 2. Quiz Logic Functions
@@ -504,21 +539,18 @@
       }
     }
 
-    function submitQuiz() {
-      // Check if any question is uncompleted
+    function submitQuiz(forceSubmit = false) {
+      // Check for unanswered questions
       const unansweredIndex = userAnswers.findIndex(a => a === null);
-      if (unansweredIndex !== -1) {
-        if (!confirm(`아직 풀지 않은 문제(문제 ${unansweredIndex + 1}번)가 있습니다. 정말 채점하시겠습니까?`)) {
-          currentQuestionIndex = unansweredIndex;
-          renderQuestion();
-          return;
-        }
+      if (unansweredIndex !== -1 && !forceSubmit) {
+        openUnansweredModal(unansweredIndex);
+        return;
       }
 
       // Stop Timer
       clearInterval(timerInterval);
 
-      // Calculate Score
+      // Calculate Score (1문제당 10점)
       let correctCount = 0;
       quizQuestions.forEach((q, idx) => {
         if (userAnswers[idx] === q.correctIndex) {
@@ -526,17 +558,18 @@
         }
       });
 
-      const finalScore = Math.round((correctCount / quizQuestions.length) * 100);
+      const finalScore = correctCount * 10;
       const formattedTime = document.getElementById("quiz-timer").innerText;
 
-      // Update Leaderboard
+      // Update Leaderboard List
       const leaderboard = getLeaderboard();
       const newRecord = {
         studentId: currentUser.studentId,
         name: currentUser.name,
         score: finalScore,
         timeSeconds: elapsedTimeSeconds,
-        formattedTime: formattedTime
+        formattedTime: formattedTime,
+        timestamp: Date.now()
       };
 
       leaderboard.push(newRecord);
@@ -549,7 +582,7 @@
 
       saveLeaderboard(leaderboard);
 
-      // Find Rank
+      // Find Exact User Rank
       const userRank = leaderboard.findIndex(item => 
         item.studentId === currentUser.studentId && 
         item.name === currentUser.name && 
@@ -557,8 +590,8 @@
         item.timeSeconds === elapsedTimeSeconds
       ) + 1;
 
-      // Trigger Confetti if high score
-      if (finalScore >= 80 && typeof confetti === 'function') {
+      // Trigger Confetti effect on high score (50점 이상 = 5문제 이상 정답)
+      if (finalScore >= 50 && typeof confetti === 'function') {
         confetti({
           particleCount: 100,
           spread: 70,
@@ -566,7 +599,7 @@
         });
       }
 
-      // Display Result View
+      // Display Results
       document.getElementById("res-score").innerHTML = `${finalScore}<span class="text-sm font-normal">점</span>`;
       document.getElementById("res-time").innerText = formattedTime;
       document.getElementById("res-rank").innerHTML = `${userRank}<span class="text-sm font-normal">위</span>`;
@@ -576,6 +609,44 @@
 
       document.getElementById("view-quiz").classList.add("hidden");
       document.getElementById("view-result").classList.remove("hidden");
+    }
+
+    function openUnansweredModal(unansweredIndex) {
+      const modal = document.getElementById("modal-unanswered");
+      const content = document.getElementById("modal-unanswered-content");
+      const textMsg = document.getElementById("unanswered-msg-text");
+      const btnGo = document.getElementById("btn-unanswered-go");
+      const btnSubmit = document.getElementById("btn-unanswered-submit");
+
+      textMsg.innerHTML = `아직 풀지 않은 문제(<strong>문제 ${unansweredIndex + 1}번</strong>)가 있습니다.<br>해당 문제로 이동하시겠습니까?`;
+
+      btnGo.onclick = () => {
+        closeUnansweredModal();
+        currentQuestionIndex = unansweredIndex;
+        renderQuestion();
+      };
+
+      btnSubmit.onclick = () => {
+        closeUnansweredModal();
+        submitQuiz(true);
+      };
+
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        modal.classList.remove("opacity-0");
+        content.classList.remove("scale-95");
+      }, 10);
+    }
+
+    function closeUnansweredModal() {
+      const modal = document.getElementById("modal-unanswered");
+      const content = document.getElementById("modal-unanswered-content");
+      
+      modal.classList.add("opacity-0");
+      content.classList.add("scale-95");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+      }, 300);
     }
 
     function renderReviewSection() {
@@ -655,7 +726,7 @@
       tbody.innerHTML = "";
 
       if (leaderboard.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400 text-xs">아직 등록된 기록이 없습니다.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="py-6 text-center text-slate-400 text-xs">등록된 기록이 없습니다.</td></tr>`;
       } else {
         leaderboard.forEach((item, index) => {
           const rank = index + 1;
@@ -664,18 +735,21 @@
           else if (rank === 2) rankIcon = `<i class="fa-solid fa-medal text-slate-400 text-base"></i>`;
           else if (rank === 3) rankIcon = `<i class="fa-solid fa-award text-amber-600 text-base"></i>`;
 
-          const isCurrentSessionUser = (item.studentId === currentUser.studentId && item.name === currentUser.name);
+          const isCurrentSessionUser = (currentUser.studentId && item.studentId === currentUser.studentId && item.name === currentUser.name);
 
           const row = document.createElement("tr");
-          row.className = `${isCurrentSessionUser ? "bg-teal-50/80 font-bold text-teal-900" : "hover:bg-slate-50 text-slate-700"}`;
+          row.className = `${isCurrentSessionUser ? "bg-teal-50/90 font-bold text-teal-900 border-l-4 border-l-teal-500" : "hover:bg-slate-50 text-slate-700"}`;
           row.innerHTML = `
-            <td class="py-3 px-4 text-center">${rankIcon}</td>
-            <td class="py-3 px-4">
-              <div class="font-semibold text-xs md:text-sm">${item.name}</div>
+            <td class="py-3 px-3 text-center">${rankIcon}</td>
+            <td class="py-3 px-3">
+              <div class="font-semibold text-xs md:text-sm flex items-center gap-1.5">
+                <span>${item.name}</span>
+                ${isCurrentSessionUser ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-600 text-white font-normal">나</span>` : ''}
+              </div>
               <div class="text-[11px] text-slate-400 font-mono">${item.studentId}</div>
             </td>
-            <td class="py-3 px-4 text-center font-bold text-emerald-600">${item.score}점</td>
-            <td class="py-3 px-4 text-center text-xs font-mono text-slate-500">${item.formattedTime}</td>
+            <td class="py-3 px-3 text-center font-bold text-emerald-600">${item.score}점</td>
+            <td class="py-3 px-3 text-center text-xs font-mono text-slate-500">${item.formattedTime}</td>
           `;
           tbody.appendChild(row);
         });
