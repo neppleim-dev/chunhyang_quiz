@@ -44,11 +44,6 @@
         <span class="text-2xl">🌸</span>
         <h1 class="font-bold text-lg md:text-xl text-teal-800 tracking-tight">중학 국어 2-2 <span class="text-emerald-600">&lt;춘향전&gt;</span> 퀴즈</h1>
       </div>
-      <button id="btn-show-leaderboard" onclick="openLeaderboardModal()" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-teal-50 hover:bg-teal-100 text-teal-700 text-sm font-semibold transition border border-teal-200 shadow-sm">
-        <i class="fa-solid font-bold fa-trophy text-amber-500"></i>
-        <span>순위표</span>
-        <span id="header-participant-count" class="ml-0.5 px-1.5 py-0.2 rounded-full bg-teal-600 text-white text-[11px] font-bold">0</span>
-      </button>
     </div>
   </header>
 
@@ -94,18 +89,14 @@
       </div>
 
       <!-- Features Badges -->
-      <div class="grid grid-cols-3 gap-2 max-w-md mx-auto mb-6 text-xs text-slate-600">
-        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center">
-          <i class="fa-solid fa-list-check text-emerald-500 text-base mb-1"></i>
+      <div class="grid grid-cols-2 gap-3 max-w-sm mx-auto mb-6 text-xs text-slate-600">
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center">
+          <i class="fa-solid fa-list-check text-emerald-500 text-lg mb-1"></i>
           <span>총 6문항 (각 10점)</span>
         </div>
-        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center">
-          <i class="fa-solid fa-stopwatch text-cyan-500 text-base mb-1"></i>
+        <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center justify-center">
+          <i class="fa-solid fa-stopwatch text-cyan-500 text-lg mb-1"></i>
           <span>실시간 스피드</span>
-        </div>
-        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-100 flex flex-col items-center">
-          <i class="fa-solid fa-users text-amber-500 text-base mb-1"></i>
-          <span>학급 전체 순위</span>
         </div>
       </div>
 
@@ -181,10 +172,10 @@
           <i class="fa-solid fa-award"></i>
         </div>
         <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-1">퀴즈 완료! 채점 결과</h2>
-        <p id="result-user-info" class="text-slate-500 font-medium text-sm mb-4">20101 홍길동 학생의 평가 보고서</p>
+        <p id="result-user-info" class="text-slate-500 font-medium text-sm mb-4">평가 보고서</p>
 
         <!-- Stats Grid -->
-        <div class="grid grid-cols-3 gap-3 max-w-md mx-auto mb-6">
+        <div class="grid grid-cols-2 gap-3 max-w-xs mx-auto mb-6">
           <div class="p-3 bg-emerald-50 border border-emerald-100 rounded-2xl">
             <span class="block text-xs font-semibold text-emerald-600">최종 점수</span>
             <span id="res-score" class="text-2xl font-black text-emerald-700">60<span class="text-sm font-normal">점</span></span>
@@ -193,18 +184,11 @@
             <span class="block text-xs font-semibold text-teal-600">소요 시간</span>
             <span id="res-time" class="text-2xl font-black text-teal-700">00:45</span>
           </div>
-          <div class="p-3 bg-amber-50 border border-amber-100 rounded-2xl">
-            <span class="block text-xs font-semibold text-amber-600">학급 순위</span>
-            <span id="res-rank" class="text-2xl font-black text-amber-700">1<span class="text-sm font-normal">위</span></span>
-          </div>
         </div>
 
         <div class="flex justify-center gap-3">
-          <button onclick="openLeaderboardModal()" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md transition flex items-center gap-1.5">
-            <i class="fa-solid fa-trophy"></i> 전체 학생 순위표 보기
-          </button>
           <button onclick="restartQuiz()" class="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition flex items-center gap-1.5">
-            <i class="fa-solid fa-rotate-right"></i> 다른 학생 풀기
+            <i class="fa-solid fa-rotate-right"></i> 다시 풀기
           </button>
         </div>
       </div>
@@ -396,7 +380,7 @@
       }
     ];
 
-    // Firebase Cloud Setup for Multi-user Real-time Leaderboard
+    // Firebase Cloud Setup
     const appId = typeof __app_id !== "undefined" ? __app_id : "default-app-id";
     const firebaseConfig = typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : null;
     const LEADERBOARD_COLLECTION = "chunhyang_leaderboard";
@@ -407,7 +391,6 @@
     let authUser = null;
     let unsubscribeSnapshot = null;
 
-    // Shared in-memory state synced with Cloud
     let cloudLeaderboard = [];
 
     // Current Quiz Session Variables
@@ -418,7 +401,6 @@
     let startTime = 0;
     let elapsedTimeSeconds = 0;
 
-    // Format seconds to MM:SS
     function formatSeconds(sec) {
       const safeSec = Math.max(0, parseInt(sec, 10) || 0);
       const mins = String(Math.floor(safeSec / 60)).padStart(2, "0");
@@ -426,12 +408,10 @@
       return `${mins}:${secs}`;
     }
 
-    // Create safe document ID per student (studentId + name)
     function makeSafeDocId(studentId, name) {
       return `${studentId.trim()}_${name.trim()}`.replace(/[\/\.#$\[\]]/g, "_");
     }
 
-    // Sort Leaderboard in JS memory: 1st Score DESC, 2nd Time ASC, 3rd Timestamp ASC
     function sortLeaderboardData(list) {
       return [...list].sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
@@ -444,33 +424,6 @@
       return sortLeaderboardData(cloudLeaderboard);
     }
 
-    function updateHeaderParticipantBadge() {
-      const list = getLeaderboard();
-      const badge = document.getElementById("header-participant-count");
-      if (badge) {
-        badge.innerText = `${list.length}명`;
-      }
-    }
-
-    function updateResultRankLive() {
-      const resultView = document.getElementById("view-result");
-      if (!resultView || resultView.classList.contains("hidden")) return;
-      if (!currentUser.studentId || !currentUser.name) return;
-
-      const sortedLeaderboard = getLeaderboard();
-      const userRank = sortedLeaderboard.findIndex(
-        item => item.studentId === currentUser.studentId && item.name === currentUser.name
-      ) + 1;
-
-      if (userRank > 0) {
-        const resRankEl = document.getElementById("res-rank");
-        if (resRankEl) {
-          resRankEl.innerHTML = `${userRank}<span class="text-sm font-normal">위 / ${sortedLeaderboard.length}명</span>`;
-        }
-      }
-    }
-
-    // Subscribe to real-time updates from all connected users
     function subscribeToCloudLeaderboard() {
       if (!authUser || !db) return;
       if (unsubscribeSnapshot) {
@@ -489,8 +442,6 @@
             }
           });
           cloudLeaderboard = sortLeaderboardData(entries);
-          updateHeaderParticipantBadge();
-          updateResultRankLive();
 
           const modal = document.getElementById("modal-leaderboard");
           if (modal && !modal.classList.contains("hidden")) {
@@ -503,7 +454,6 @@
       );
     }
 
-    // Initialize Firebase Auth & Cloud Sync on load
     async function initCloudConnection() {
       if (!firebaseConfig) return;
       try {
@@ -511,7 +461,6 @@
         auth = getAuth(app);
         db = getFirestore(app);
 
-        // RULE 3: Authenticate FIRST before any Firestore query
         if (typeof __initial_auth_token !== "undefined" && __initial_auth_token) {
           await signInWithCustomToken(auth, __initial_auth_token);
         } else {
@@ -531,7 +480,6 @@
 
     initCloudConnection();
 
-    // Calculate current score from userAnswers
     function calculateCurrentScore() {
       let correctCount = 0;
       quizQuestions.forEach((q, idx) => {
@@ -542,7 +490,6 @@
       return correctCount * 10;
     }
 
-    // Save or update current participant's score & time to the shared cloud leaderboard
     async function upsertCurrentParticipant() {
       if (!currentUser.studentId || !currentUser.name) return;
 
@@ -563,7 +510,6 @@
         uid: authUser ? authUser.uid : "anonymous"
       };
 
-      // Optimistic in-memory update for instant UI responsiveness
       const existingIdx = cloudLeaderboard.findIndex(
         item => item.studentId === currentUser.studentId && item.name === currentUser.name
       );
@@ -573,9 +519,7 @@
         cloudLeaderboard.push(record);
       }
       cloudLeaderboard = sortLeaderboardData(cloudLeaderboard);
-      updateHeaderParticipantBadge();
 
-      // Persist to shared public cloud collection so all other users see it
       if (!authUser || !db) return;
       try {
         const docRef = doc(db, "artifacts", appId, "public", "data", LEADERBOARD_COLLECTION, currentUser.docId);
@@ -585,7 +529,6 @@
       }
     }
 
-    // 2. Quiz Logic Functions
     function startQuiz() {
       const studentIdInput = document.getElementById("input-student-id").value.trim();
       const userNameInput = document.getElementById("input-user-name").value.trim();
@@ -602,27 +545,21 @@
       currentUser.docId = makeSafeDocId(studentIdInput, userNameInput);
       currentUser.sessionId = Date.now();
 
-      // Reset state
       currentQuestionIndex = 0;
       userAnswers.fill(null);
       elapsedTimeSeconds = 0;
 
-      // Update Badge
       document.getElementById("quiz-student-badge").innerText = `${currentUser.studentId} ${currentUser.name}`;
 
-      // Switch View
       document.getElementById("view-start").classList.add("hidden");
       document.getElementById("view-quiz").classList.remove("hidden");
 
-      // Start Timer
       startTime = Date.now();
       clearInterval(timerInterval);
       document.getElementById("quiz-timer").innerText = "00:00";
       timerInterval = setInterval(updateTimer, 1000);
 
-      // Register participant immediately to cloud
       upsertCurrentParticipant();
-
       renderQuestion();
     }
 
@@ -634,12 +571,10 @@
     function renderQuestion() {
       const q = quizQuestions[currentQuestionIndex];
 
-      // Update Badges & Progress Bar
       document.getElementById("quiz-progress-badge").innerText = `문제 ${currentQuestionIndex + 1} / ${quizQuestions.length}`;
       const progressPercent = ((currentQuestionIndex + 1) / quizQuestions.length) * 100;
       document.getElementById("quiz-progress-bar").style.width = `${progressPercent}%`;
 
-      // Set Text
       document.getElementById("question-title").innerText = `${q.id}. ${q.question}`;
 
       const contextBox = document.getElementById("question-context");
@@ -650,7 +585,6 @@
         contextBox.classList.add("hidden");
       }
 
-      // Render Options
       const optionsContainer = document.getElementById("options-container");
       optionsContainer.innerHTML = "";
 
@@ -681,7 +615,6 @@
         optionsContainer.appendChild(btn);
       });
 
-      // Navigation Buttons visibility
       const btnPrev = document.getElementById("btn-prev-q");
       const btnNext = document.getElementById("btn-next-q");
       const btnSubmit = document.getElementById("btn-submit-q");
@@ -712,27 +645,18 @@
     }
 
     async function submitQuiz(forceSubmit = false) {
-      // Check for unanswered questions
       const unansweredIndex = userAnswers.findIndex(a => a === null);
       if (unansweredIndex !== -1 && !forceSubmit) {
         openUnansweredModal(unansweredIndex);
         return;
       }
 
-      // Stop Timer & finalize participant record in cloud
       clearInterval(timerInterval);
       await upsertCurrentParticipant();
 
       const finalScore = calculateCurrentScore();
       const formattedTime = formatSeconds(elapsedTimeSeconds);
-      const sortedLeaderboard = getLeaderboard();
 
-      // Find Exact User Rank among all cloud participants
-      const userRank = sortedLeaderboard.findIndex(
-        item => item.studentId === currentUser.studentId && item.name === currentUser.name
-      ) + 1;
-
-      // Trigger Confetti effect on high score (50점 이상 = 5문제 이상 정답)
       if (finalScore >= 50 && typeof confetti === "function") {
         confetti({
           particleCount: 100,
@@ -741,34 +665,138 @@
         });
       }
 
-      // Display Results
       document.getElementById("res-score").innerHTML = `${finalScore}<span class="text-sm font-normal">점</span>`;
       document.getElementById("res-time").innerText = formattedTime;
-      document.getElementById("res-rank").innerHTML = `${userRank}<span class="text-sm font-normal">위 / ${sortedLeaderboard.length}명</span>`;
-      document.getElementById("result-user-info").innerText = `${currentUser.studentId} ${currentUser.name} 학생의 채점 결과`;
+      document.getElementById("result-user-info").innerText = `${currentUser.studentId} ${currentUser.name} 학생의 평가 보고서`;
 
-      renderReviewSection();
+      renderReviewCards();
 
       document.getElementById("view-quiz").classList.add("hidden");
       document.getElementById("view-result").classList.remove("hidden");
     }
 
-    function openUnansweredModal(unansweredIndex) {
+    function renderReviewCards() {
+      const reviewContainer = document.getElementById("review-container");
+      if (!reviewContainer) return;
+      reviewContainer.innerHTML = "";
+
+      quizQuestions.forEach((q, idx) => {
+        const userAns = userAnswers[idx];
+        const isCorrect = userAns === q.correctIndex;
+
+        const card = document.createElement("div");
+        card.className = `p-4 rounded-2xl border ${isCorrect ? "bg-emerald-50/50 border-emerald-200" : "bg-rose-50/50 border-rose-200"}`;
+
+        const header = document.createElement("div");
+        header.className = "flex items-center justify-between mb-2";
+        header.innerHTML = `
+          <span class="font-bold text-sm ${isCorrect ? "text-emerald-700" : "text-rose-700"}">
+            ${idx + 1}번 문제 - ${isCorrect ? "정답 ⭕ (+10점)" : "오답 ❌ (0점)"}
+          </span>
+        `;
+
+        const title = document.createElement("p");
+        title.className = "font-medium text-slate-800 text-sm mb-2";
+        title.innerText = q.question;
+
+        const userAnsText = userAns !== null ? q.options[userAns] : "미응답";
+        const correctAnsText = q.options[q.correctIndex];
+
+        const ansBox = document.createElement("div");
+        ansBox.className = "text-xs space-y-1 mb-2 bg-white/70 p-2.5 rounded-xl border border-slate-100";
+        ansBox.innerHTML = `
+          <div><strong class="text-slate-600">내 선택:</strong> <span class="${isCorrect ? "text-emerald-600 font-semibold" : "text-rose-600 font-semibold"}">${userAnsText}</span></div>
+          ${!isCorrect ? `<div><strong class="text-slate-600">정답:</strong> <span class="text-teal-700 font-semibold">${correctAnsText}</span></div>` : ""}
+        `;
+
+        const exp = document.createElement("p");
+        exp.className = "text-xs text-slate-600 bg-amber-50/80 p-2.5 rounded-xl border border-amber-100 leading-relaxed";
+        exp.innerHTML = `<strong>💡 해설:</strong> ${q.explanation}`;
+
+        card.appendChild(header);
+        card.appendChild(title);
+        card.appendChild(ansBox);
+        card.appendChild(exp);
+
+        reviewContainer.appendChild(card);
+      });
+    }
+
+    function restartQuiz() {
+      document.getElementById("view-result").classList.add("hidden");
+      document.getElementById("view-start").classList.remove("hidden");
+      document.getElementById("input-student-id").value = "";
+      document.getElementById("input-user-name").value = "";
+    }
+
+    function openLeaderboardModal() {
+      renderLeaderboardRows(true);
+      const modal = document.getElementById("modal-leaderboard");
+      modal.classList.remove("hidden");
+      setTimeout(() => {
+        modal.classList.remove("opacity-0");
+        document.getElementById("modal-content")?.classList.remove("scale-95");
+      }, 10);
+    }
+
+    function closeLeaderboardModal() {
+      const modal = document.getElementById("modal-leaderboard");
+      modal.classList.add("opacity-0");
+      document.getElementById("modal-content")?.classList.add("scale-95");
+      setTimeout(() => {
+        modal.classList.add("hidden");
+      }, 300);
+    }
+
+    function renderLeaderboardRows(animate = false) {
+      const tbody = document.getElementById("leaderboard-tbody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      const list = getLeaderboard();
+      const totalLabel = document.getElementById("total-students-label");
+      if (totalLabel) totalLabel.innerText = `총 참여 학생: ${list.length}명`;
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-400 text-xs">아직 등록된 참여자가 없습니다.</td></tr>`;
+        return;
+      }
+
+      list.forEach((item, idx) => {
+        const rank = idx + 1;
+        const isSelf = currentUser.studentId && currentUser.name && item.studentId === currentUser.studentId && item.name === currentUser.name;
+
+        let rankBadge = `<span class="font-bold text-slate-600">${rank}</span>`;
+        if (rank === 1) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-400 text-white font-black text-xs shadow-sm">🥇</span>`;
+        else if (rank === 2) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-300 text-slate-700 font-black text-xs shadow-sm">🥈</span>`;
+        else if (rank === 3) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-700 text-white font-black text-xs shadow-sm">🥉</span>`;
+
+        const tr = document.createElement("tr");
+        tr.className = `transition ${isSelf ? "bg-teal-50/80 font-bold text-teal-900" : "hover:bg-slate-50 text-slate-700"}`;
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-center">${rankBadge}</td>
+          <td class="py-3 px-4">${item.studentId} ${item.name} ${isSelf ? '<span class="text-[10px] bg-teal-600 text-white px-1.5 py-0.5 rounded-full ml-1">나</span>' : ''}</td>
+          <td class="py-3 px-4 text-center font-bold text-emerald-600">${item.score}점</td>
+          <td class="py-3 px-4 text-center text-xs text-slate-500">${item.formattedTime || formatSeconds(item.timeSeconds)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openUnansweredModal(index) {
       const modal = document.getElementById("modal-unanswered");
-      const content = document.getElementById("modal-unanswered-content");
-      const textMsg = document.getElementById("unanswered-msg-text");
-      const btnGo = document.getElementById("btn-unanswered-go");
-      const btnSubmit = document.getElementById("btn-unanswered-submit");
+      const msg = document.getElementById("unanswered-msg-text");
+      if (msg) {
+        msg.innerText = `${index + 1}번 문제를 포함하여 아직 답변하지 않은 문항이 있습니다.`;
+      }
 
-      textMsg.innerHTML = `아직 풀지 않은 문제(<strong>문제 ${unansweredIndex + 1}번</strong>)가 있습니다.<br>해당 문제로 이동하시겠습니까?`;
-
-      btnGo.onclick = () => {
+      document.getElementById("btn-unanswered-go").onclick = () => {
         closeUnansweredModal();
-        currentQuestionIndex = unansweredIndex;
+        currentQuestionIndex = index;
         renderQuestion();
       };
 
-      btnSubmit.onclick = () => {
+      document.getElementById("btn-unanswered-submit").onclick = () => {
         closeUnansweredModal();
         submitQuiz(true);
       };
@@ -776,176 +804,21 @@
       modal.classList.remove("hidden");
       setTimeout(() => {
         modal.classList.remove("opacity-0");
-        content.classList.remove("scale-95");
+        document.getElementById("modal-unanswered-content")?.classList.remove("scale-95");
       }, 10);
     }
 
     function closeUnansweredModal() {
       const modal = document.getElementById("modal-unanswered");
-      const content = document.getElementById("modal-unanswered-content");
-      
       modal.classList.add("opacity-0");
-      content.classList.add("scale-95");
+      document.getElementById("modal-unanswered-content")?.classList.add("scale-95");
       setTimeout(() => {
         modal.classList.add("hidden");
       }, 300);
     }
 
-    function renderReviewSection() {
-      const reviewContainer = document.getElementById("review-container");
-      reviewContainer.innerHTML = "";
-
-      quizQuestions.forEach((q, idx) => {
-        const userSelected = userAnswers[idx];
-        const isCorrect = userSelected === q.correctIndex;
-
-        const card = document.createElement("div");
-        card.className = `p-5 rounded-2xl border ${
-          isCorrect ? "bg-emerald-50/40 border-emerald-200" : "bg-rose-50/40 border-rose-200"
-        }`;
-
-        const statusBadge = isCorrect
-          ? `<span class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold inline-flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> 정답</span>`
-          : `<span class="px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 text-xs font-bold inline-flex items-center gap-1"><i class="fa-solid fa-circle-xmark"></i> 오답</span>`;
-
-        let optionsListHtml = "";
-        q.options.forEach((opt, oIdx) => {
-          let styleClass = "text-slate-600 bg-white border-slate-100";
-          let badgeText = "";
-
-          if (oIdx === q.correctIndex) {
-            styleClass = "text-emerald-900 bg-emerald-100/80 border-emerald-300 font-semibold";
-            badgeText = `<span class="text-xs font-bold text-emerald-700 ml-auto">[정답 답안]</span>`;
-          }
-          if (userSelected === oIdx && !isCorrect) {
-            styleClass = "text-rose-900 bg-rose-100/80 border-rose-300 font-semibold line-through";
-            badgeText = `<span class="text-xs font-bold text-rose-700 ml-auto">[내 선택]</span>`;
-          }
-
-          optionsListHtml += `
-            <div class="p-2.5 rounded-xl border ${styleClass} text-xs md:text-sm flex items-center gap-2">
-              <span class="w-5 h-5 rounded-full bg-slate-200/60 flex items-center justify-center text-xs shrink-0 font-bold">${oIdx + 1}</span>
-              <span>${opt}</span>
-              ${badgeText}
-            </div>
-          `;
-        });
-
-        card.innerHTML = `
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-bold text-slate-500">문제 ${q.id}</span>
-            ${statusBadge}
-          </div>
-          <h4 class="font-bold text-slate-800 text-sm md:text-base mb-3">${q.question}</h4>
-          ${q.context ? `<div class="p-3 bg-white/80 rounded-xl border border-slate-200/60 text-xs text-slate-700 italic mb-3">${q.context}</div>` : ""}
-          <div class="space-y-1.5 mb-3">
-            ${optionsListHtml}
-          </div>
-          <div class="p-3 bg-white rounded-xl border border-slate-200/80 text-xs md:text-sm text-slate-700 leading-relaxed">
-            <div class="font-bold text-teal-700 mb-0.5 flex items-center gap-1">
-              <i class="fa-solid fa-lightbulb"></i> 핵심 해설
-            </div>
-            ${q.explanation}
-          </div>
-        `;
-
-        reviewContainer.appendChild(card);
-      });
-    }
-
-    function restartQuiz() {
-      document.getElementById("input-student-id").value = "";
-      document.getElementById("input-user-name").value = "";
-      document.getElementById("view-result").classList.add("hidden");
-      document.getElementById("view-start").classList.remove("hidden");
-    }
-
-    // 3. Leaderboard Modal & Render Functions
-    function renderLeaderboardRows(syncActiveQuiz = true) {
-      const tbody = document.getElementById("leaderboard-tbody");
-      const totalLabel = document.getElementById("total-students-label");
-
-      // If a participant is currently solving the quiz, sync their latest score & time
-      const quizView = document.getElementById("view-quiz");
-      if (syncActiveQuiz && quizView && !quizView.classList.contains("hidden")) {
-        upsertCurrentParticipant();
-      }
-
-      const leaderboard = getLeaderboard();
-      tbody.innerHTML = "";
-      if (totalLabel) {
-        totalLabel.innerText = `총 참여 학생: ${leaderboard.length}명`;
-      }
-
-      if (leaderboard.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="4" class="py-8 text-center text-slate-400 text-xs">
-              학번과 이름을 입력하고 퀴즈에 참여하면 모든 학생의 순위가 실시간으로 표시됩니다.
-            </td>
-          </tr>`;
-        return;
-      }
-
-      leaderboard.forEach((item, index) => {
-        const rank = index + 1;
-
-        let rankIcon = `<span class="font-bold text-slate-600">${rank}위</span>`;
-        if (rank === 1) rankIcon = `<span class="inline-flex items-center gap-1 font-extrabold text-amber-500"><i class="fa-solid fa-trophy text-base"></i> 1위</span>`;
-        else if (rank === 2) rankIcon = `<span class="inline-flex items-center gap-1 font-extrabold text-slate-400"><i class="fa-solid fa-medal text-base"></i> 2위</span>`;
-        else if (rank === 3) rankIcon = `<span class="inline-flex items-center gap-1 font-extrabold text-amber-700"><i class="fa-solid fa-award text-base"></i> 3위</span>`;
-
-        const isCurrentSessionUser = (
-          currentUser.studentId &&
-          item.studentId === currentUser.studentId &&
-          item.name === currentUser.name
-        );
-
-        const row = document.createElement("tr");
-        row.className = `${isCurrentSessionUser ? "bg-teal-50/90 font-bold text-teal-900 border-l-4 border-l-teal-500" : "hover:bg-slate-50 text-slate-700 transition"}`;
-        row.innerHTML = `
-          <td class="py-3 px-4 text-center whitespace-nowrap">${rankIcon}</td>
-          <td class="py-3 px-4">
-            <div class="font-semibold text-xs md:text-sm flex items-center gap-1.5">
-              <span>${item.name}</span>
-              ${isCurrentSessionUser ? `<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-600 text-white font-bold">나</span>` : ""}
-            </div>
-            <div class="text-[11px] text-slate-400 font-mono">${item.studentId}</div>
-          </td>
-          <td class="py-3 px-4 text-center font-bold text-emerald-600">${item.score}점</td>
-          <td class="py-3 px-4 text-center text-xs font-mono text-slate-500">${item.formattedTime}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-
-    function openLeaderboardModal() {
-      const modal = document.getElementById("modal-leaderboard");
-      const modalContent = document.getElementById("modal-content");
-
-      renderLeaderboardRows(true);
-
-      modal.classList.remove("hidden");
-      setTimeout(() => {
-        modal.classList.remove("opacity-0");
-        modalContent.classList.remove("scale-95");
-      }, 10);
-    }
-
-    function closeLeaderboardModal() {
-      const modal = document.getElementById("modal-leaderboard");
-      const modalContent = document.getElementById("modal-content");
-      
-      modal.classList.add("opacity-0");
-      modalContent.classList.add("scale-95");
-      setTimeout(() => {
-        modal.classList.add("hidden");
-      }, 300);
-    }
-
-    // Bind handlers to window for HTML inline onclick attributes
+    // Expose functions to window
     window.startQuiz = startQuiz;
-    window.selectOption = selectOption;
     window.navigateQuestion = navigateQuestion;
     window.submitQuiz = submitQuiz;
     window.restartQuiz = restartQuiz;
